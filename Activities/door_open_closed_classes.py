@@ -31,7 +31,7 @@ class DoorGroundTruth:
         @param door_open_state - set to True if door is open, otherwise, false"""
 
         # GUIDE  Part 1: Store door state
-        # YOUR CODE HERE
+        self.door_open_state = door_open_state
 
         # GUIDE  Part 3: Store probabilities of door being opened if open action taken, etc
         #           (the transition table)
@@ -84,7 +84,7 @@ class DoorGroundTruth:
 
     def get_door_state(self):
         """ GUIDE Part 1: Return the door state as a boolean (Open - True/Closed - False)"""
-        # YOUR CODE HERE
+        return self.door_open_state
 
     def __str__(self):
         """ Once you fill in get_door_state, this will print nicely """
@@ -97,7 +97,8 @@ class DoorSensor():
         #. I.e., whether or not the door is open or closed, 0.5 probability of saying door is open (or closed)
         #.  The methods will be used to set the probabilities to something other than uniform
 
-        # YOUR CODE HERE
+        self.true_given_open = .5 
+        self.false_give_closed = .5
 
     def set_return_true_if_open_probability(self, prob: float):
         """ Set the probability of the sensor returning True if the door is open
@@ -107,7 +108,7 @@ class DoorSensor():
         assert 0.0 <= prob <= 1.0
 
         # GUIDE: Part 2: Set the random variable to the probability value
-        # YOUR CODE HERE
+        self.true_given_open = prob # ??? does this even make sense what are we doing here - p(true indication | open door) != p(true indication)
 
     def set_return_false_if_closed_probability(self, prob: float):
         """ Set the probability of the sensor returning False if the door is closed
@@ -117,7 +118,7 @@ class DoorSensor():
         assert 0.0 <= prob <= 1.0
 
         # GUIDE: Set the random variable to the probability value
-        # YOUR CODE HERE
+        self.false_give_closed = prob # ??? does this even make sense what are we doing here
 
     def sample_sensor(self, door_ground_truth : DoorGroundTruth):
         """ Sample the sensor
@@ -129,7 +130,11 @@ class DoorSensor():
         #.  is closed. First determine which to sample from, THEN do the same thing you did in the
         #.  first problem in the jupyter notebook.
         #.
-        # YOUR CODE HERE
+        if door_ground_truth.get_door_state():
+            return np.random.uniform() < self.true_given_open # door is open - return true is rand var is less than the probability of true given open
+        else:
+            return np.random.uniform() < (1 - self.false_give_closed) # door is closed - return true if rand var is less than the probability of true given closed
+
 
 
 # Check if the door and sensor are working correctly
