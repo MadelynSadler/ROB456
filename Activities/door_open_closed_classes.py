@@ -97,8 +97,10 @@ class DoorSensor():
         #. I.e., whether or not the door is open or closed, 0.5 probability of saying door is open (or closed)
         #.  The methods will be used to set the probabilities to something other than uniform
 
-        self.true_given_open = .5 
-        self.false_give_closed = .5
+        self.sensor_probs = {
+            "true_given_open": .5,
+            "false_give_closed": .5
+        }
 
     def set_return_true_if_open_probability(self, prob: float):
         """ Set the probability of the sensor returning True if the door is open
@@ -108,7 +110,7 @@ class DoorSensor():
         assert 0.0 <= prob <= 1.0
 
         # GUIDE: Part 2: Set the random variable to the probability value
-        self.true_given_open = prob # ??? does this even make sense what are we doing here - p(true indication | open door) != p(true indication)
+        self.sensor_probs["true_given_open"] = prob # ??? does this even make sense what are we doing here - p(true indication | open door) != p(true indication)
 
     def set_return_false_if_closed_probability(self, prob: float):
         """ Set the probability of the sensor returning False if the door is closed
@@ -118,7 +120,7 @@ class DoorSensor():
         assert 0.0 <= prob <= 1.0
 
         # GUIDE: Set the random variable to the probability value
-        self.false_give_closed = prob # ??? does this even make sense what are we doing here
+        self.sensor_probs["false_give_closed"] = prob # ??? does this even make sense what are we doing here
 
     def sample_sensor(self, door_ground_truth : DoorGroundTruth):
         """ Sample the sensor
@@ -131,9 +133,9 @@ class DoorSensor():
         #.  first problem in the jupyter notebook.
         #.
         if door_ground_truth.get_door_state():
-            return np.random.uniform() < self.true_given_open # door is open - return true is rand var is less than the probability of true given open
+            return np.random.uniform() < self.sensor_probs["true_given_open"] # door is open - return true is rand var is less than the probability of true given open
         else:
-            return np.random.uniform() < (1 - self.false_give_closed) # door is closed - return true if rand var is less than the probability of true given closed
+            return np.random.uniform() < (1 - self.sensor_probs["false_give_closed"]) # door is closed - return true if rand var is less than the probability of true given closed
 
 
 
