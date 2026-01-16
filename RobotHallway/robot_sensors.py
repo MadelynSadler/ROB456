@@ -23,6 +23,16 @@ class RobotSensors:
 
         # GUIDE: Create the variable to store the probabilities
         # YOUR CODE HERE
+        self.robot_door_state = {
+            "True": { # door
+                "True": 0.5, # see door
+                "False": 0.5 # see no door 
+            }, 
+            "False": { # no door
+                "True": 0.5, # see door
+                "False": 0.5 # see no door 
+            } 
+        }
 
         # In the GUI version, these will be called with values from the GUI after the RobotSensors instance
         #   has been created
@@ -36,10 +46,14 @@ class RobotSensors:
         @param in_prob_see_door_if_not_door - probability of seeing a door if there is NOT one
         """
         # Bayes and particle filter assignment
-        # GUIDE: Store the input values for the TWO random variables (one for the door there, one for no door)
+        # GUIDE: Store the input values for the TWO random variables (one for the door there, one for    no door)
         #  Reminder: You should have created the variable to hold these values in the __init__ method above
         #  Second note: all variables should be referenced with self.
         # YOUR CODE HERE
+        self.robot_door_state["True"]["True"] = in_prob_see_door_if_door
+        self.robot_door_state["True"]["False"] = 1-in_prob_see_door_if_door
+        self.robot_door_state["False"]["True"] = in_prob_see_door_if_not_door
+        self.robot_door_state["False"]["False"] = 1-in_prob_see_door_if_not_door
 
     def set_distance_wall_sensor_probabilities(self, sigma=0.1):
         """ Setup the wall sensor probabilities (store them in the dictionary)
@@ -72,6 +86,13 @@ class RobotSensors:
         # Note: Step 2 is just the sample_boolean code from your probabilities assignment
         
         # YOUR CODE HERE
+        # if in front of door & door there sees door
+        # if not in front of door & no door sees door
+        sample =  np.random.uniform()
+        if is_in_front_of_door:
+            return sample < self.robot_door_state["True"]["True"]
+        else:
+            return sample < self.robot_door_state["False"]["True"]
 
     def query_distance_to_wall(self, robot_gt: RobotGroundTruth):
         """ Return a distance reading (with correct noise) of the robot's location
