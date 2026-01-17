@@ -69,7 +69,7 @@ class RobotGroundTruth:
         self.move_probabilities["move_left"] = {
             "left": move_left,
             "right": move_right,
-            "still": 1-move_left+move_right
+            "still": 1 - (move_left + move_right)
         }
 
     def set_move_right_probabilities(self, move_left=0.05, move_right=0.8):
@@ -91,7 +91,7 @@ class RobotGroundTruth:
         self.move_probabilities["move_right"] = {
             "left": move_left,
             "right": move_right,
-            "still": 1-move_left+move_right # ensures sum to one
+            "still": 1 - (move_left + move_right) # ensures sum to one
         }
 
     def set_move_continuos_probabilities(self, sigma=0.1):

@@ -19,6 +19,7 @@ class BayesFilter:
         # Probability representation (discrete set of bins)
         #   GUIDE: Create a variable to store the location probabilities in        
         # YOUR CODE HERE
+        self.location_probabilities = np.empty(1)
 
         # Note that in the GUI version, this will method be called with the desired number of bins
         self.reset_probabilities()
@@ -29,18 +30,22 @@ class BayesFilter:
 
         # GUIDE create an array with n_bins, set to uniform distribution
         # YOUR CODE HERE
+        self.location_probabilities = np.full(n_bins, 1/n_bins)
+
 
     def probability(self, bin_indx: int):
         """ Get the probability in the given bin
         @param bin_indx - which bin, a number between 0 and n_bins-1"""
         # GUILDE return the probability in the bin_index'th bin
         # YOUR CODE HERE
+        return self.location_probabilities[bin_indx]
 
     def n_bins(self):
         """Return the number of bins
         @return int (number of bins)"""
         # GUILD: Return the number of probability bins
         # YOUR CODE HERE
+        return self.location_probabilities.size
 
     def update_belief_sensor_reading(self, 
                                      world_ground_truth: WorldGroundTruth, 
@@ -70,6 +75,20 @@ class BayesFilter:
         # You might find enumerate useful
         #  for indx, p in enumerate(self.probs):
         # YOUR CODE HERE
+        new_probs = np.zeros(self.n_bins())
+        bin_width = 1/self.n_bins()
+        for i, prob in enumerate(self.location_probabilities):
+            loc = (i + 0.5) * bin_width
+
+            is_in_front_of_door = world_ground_truth.is_location_in_front_of_door(loc)
+            py_x = robot_sensor.robot_door_state[str(is_in_front_of_door)][str(sensor_reading)] # prob of door given sees door
+            
+            new_probs[i] = prob * py_x
+
+        # normalize
+        total = np.sum(new_probs)
+        self.location_probabilities = new_probs / total
+        return
 
     def update_belief_move_left(self, robot_ground_truth: RobotGroundTruth):
         """ Update the probabilities assuming a move left.
@@ -87,6 +106,28 @@ class BayesFilter:
         #  one already - any error is just numerical
 
         # YOUR CODE HERE
+        new_probs = np.zeros(self.n_bins())
+
+        move = robot_ground_truth.move_probabilities["move_left"]
+        p_still = move["still"]
+        p_left  = move["left"]
+        p_right = move["right"]
+
+        for i, prob in enumerate(self.location_probabilities):
+
+            # prob staying still
+            new_probs[i] += prob * p_still
+            # prob left
+            if i > 0: new_probs[i-1] += prob * p_left # not at the left wall
+            else: new_probs[i] += prob * p_left # at the left wall (stack the beans)
+            # prob right
+            if i < self.n_bins()-1: new_probs[i+1] += prob * p_right # not at the right wall
+            else: new_probs[i] += prob * p_right # at the right wall (stack the beans)
+
+        # normalize
+        total = np.sum(new_probs)
+        self.location_probabilities = new_probs / total
+        return
 
     def update_belief_move_right(self, robot_ground_truth: RobotGroundTruth):
         """ Update the probabilities assuming a move right.
@@ -96,6 +137,28 @@ class BayesFilter:
         # GUIDE: bayes assignment
         #.  Calculate new probabilities based on a move right
         # YOUR CODE HERE
+        new_probs = np.zeros(self.n_bins())
+
+        move = robot_ground_truth.move_probabilities["move_right"]
+        p_still = move["still"]
+        p_left  = move["left"]
+        p_right = move["right"]
+
+        for i, prob in enumerate(self.location_probabilities):
+
+            # prob staying still
+            new_probs[i] += prob * p_still
+            # prob left
+            if i > 0: new_probs[i-1] += prob * p_left # not at the left wall
+            else: new_probs[i] += prob * p_left # at the left wall (stack the beans)
+            # prob right
+            if i < self.n_bins()-1: new_probs[i+1] += prob * p_right # not at the right wall
+            else: new_probs[i] += prob * p_right # at the right wall (stack the beans)
+
+        # normalize
+        total = np.sum(new_probs)
+        self.location_probabilities = new_probs / total
+        return
 
     def one_full_update(self, 
                         world_ground_truth: WorldGroundTruth, 
@@ -116,6 +179,18 @@ class BayesFilter:
         #  Step 1 predict: update your belief by the action (call one of update_belief_move_left or update_belief_move_right)
         #  Step 2 correct: do the correction step (update belief by the sensor reading)
         # YOUR CODE HERE
+        
+        # predict
+        if u == "move_left":
+            self.update_belief_move_left(robot_ground_truth)
+        elif u == "move_right":
+            self.update_belief_move_right(robot_ground_truth)
+        else: # move_continuous
+            ...
+
+        # correct
+        # z is the boolean sensor_reading parameter passed into this function
+        self.update_belief_sensor_reading(world_ground_truth, robot_sensor, z)
 
 
 def check_uniform(bf: BayesFilter):
