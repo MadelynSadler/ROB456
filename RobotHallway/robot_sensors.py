@@ -34,6 +34,10 @@ class RobotSensors:
             } 
         }
 
+        self.distance_to_wall = {
+            "sigma": 0.2
+        }
+
         # In the GUI version, these will be called with values from the GUI after the RobotSensors instance
         #   has been created
         # Actually SET the values for the dictionaries
@@ -63,6 +67,8 @@ class RobotSensors:
         # Kalman and particle filter assignment
         # GUIDE: Store the Gaussian (reminder, mean for location is zero)
         # YOUR CODE HERE
+        assert sigma > 0.0
+        self.distance_to_wall["sigma"] = sigma
 
     def query_door(self, robot_gt:RobotGroundTruth, world_gt:WorldGroundTruth):
         """ Query the door sensor
@@ -105,6 +111,8 @@ class RobotSensors:
         # GUIDE: Return the distance to the wall (with noise)
         #  This is the Gaussian assignment from your probabilities homework
         # YOUR CODE HERE
+        sigma = self.distance_to_wall["sigma"]
+        return robot_gt.robot_loc + np.random.normal(0, sigma) # robot location + random gaussian noise based on sigma
 
 
 def test_discrete_sensors(b_print=True):
