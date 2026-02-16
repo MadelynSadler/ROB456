@@ -52,7 +52,19 @@ def convert_scan_to_xy(scan: LaserScan):
     ys = []
     # GUIDE
     #. convert range scan to x,y location
-    # YOUR CODE HERE
+
+    # create angles array
+    scan_thetas = np.linspace(scan.angle_min, scan.angle_max, len(scan.ranges), endpoint=True)
+    ranges = np.array(scan.ranges)
+
+    # filter out zeros/infinite values
+    valid_filter = np.isfinite(ranges) & (ranges > 0.0)
+    scan_thetas = scan_thetas[valid_filter]
+    ranges = ranges[valid_filter]
+
+    # x is forward, y is left/right
+    xs = ranges * np.cos(scan_thetas)
+    ys = ranges * np.sin(scan_thetas)
     return xs, ys
 
 
@@ -66,7 +78,18 @@ def label_scan(scan: LaserScan, robot_width = .38):
     # Fancy way of making an array of labels the same size as the number of scans
     # Set all labels that are to the left of the robot with "Left", etc
     labels = ["Front"] * len(scan.ranges)
-    # YOUR CODE HERE
+    xs, ys = convert_scan_to_xy(scan)
+
+    half_width = robot_width / 2.0
+
+    for i in range(len(scan.ranges)):
+        if ys[i] > half_width:
+            labels[i] = "Left"
+        elif ys[i] < -half_width:
+            labels[i] = "Right"
+        else:
+            labels[i] = "Front"
+
     return labels
 
 
@@ -129,7 +152,6 @@ def get_twist_values(scan: LaserScan, robot_width = 0.38, stopping_distance = 1.
     # Use angle min, max, and number of readings to calculate the theta value for each scan
     # This should be a numpy array of length num_readings, that starts at angle_min and ends at angle_max
     #.  Reminder: These are variables in 
-    # YOUR CODE HERE
 
     # GUIDE: Determine what the closest obstacle/reading is for scans in front of the robot
     #  Step 1: Determine which of the range readings correspond to being "in front of" the robot (see comment at top)
@@ -162,7 +184,22 @@ def get_twist_values(scan: LaserScan, robot_width = 0.38, stopping_distance = 1.
     max_speed = 0.2
 
     # You can use convert_scan_to_xy here if you want
-    # YOUR CODE HERE
+    labels = label_scan(scan, robot_width)
+    xs, ys = convert_scan_to_xy(scan)
+    # x distances of all the scans in front of the robot
+    in_front_distances = [x for x, label in zip(xs, labels) if label == "Front"]
+
+    # determine distance of shortest scan
+    if len(in_front_distances) > 0:
+        shortest = min(in_front_distances)
+
+        diff = shortest - stopping_distance # diff between target and when we're supposed to stop
+        linear_x = max_speed * np.tanh(diff) # calculate speed as a function of tanh
+        if abs(diff) < 0.01:
+            linear_x = 0.0
+    else:
+        linear_x = max_speed
+
     return (linear_x, angular_z)
 
 if __name__ == '__main__':
