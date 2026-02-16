@@ -38,6 +38,7 @@ class MyStopper(Node):
 		self.sub = self.create_subscription(LaserScan, 'base_scan', self.callback, 10)
 
 		# GUIDE: Any variables that you want to add can go here
+		self.b_is_stopped = True
 
 	def callback(self, scan):
 		# Every time we get a laser scan, calculate the shortest scan distance in front
@@ -57,7 +58,8 @@ class MyStopper(Node):
 		# GUIDE
 		# Use angle min, max, and number of readings to calculate the theta value for each scan
 		# This should be a numpy array of length num_readings, that starts at angle_min and ends at angle_max
-  # YOUR CODE HERE
+		scan_thetas = np.linspace(angle_min, angle_max, num=num_readings, endpoint=True)
+		ranges = np.array(scan.ranges)
 
 		# GUIDE: Determine what the closest obstacle/reading is for scans in front of the robot
 		#  Step 1: Determine which of the range readings correspond to being "in front of" the robot (see comment at top)
@@ -84,7 +86,33 @@ class MyStopper(Node):
 
 		shortest = 0
 		max_speed = 0.2
-  # YOUR CODE HERE
+		# step 1 - get readings in front of robot
+		valid_filter = np.isfinite(ranges) & (ranges > 0.0)
+		ranges = ranges[valid_filter] # filter out scans that don't hit anything
+		scan_thetas = scan_thetas[valid_filter]
+		y_distances = ranges * np.sin(scan_thetas) # get y distances
+		x_distances = ranges * np.cos(scan_thetas)
+		in_front_vals = (np.abs(y_distances) < 0.19) * (x_distances > 0)# get values in front
+		in_front_ranges = ranges[in_front_vals]
+
+		# step 2 - get min distance of closest object in front
+		# if there are scans that hit things in the front
+		if len(in_front_ranges) > 0:
+			shortest = np.min(in_front_ranges)
+		else: 
+			shortest = 10.0
+
+		# step 3 - decide when to stop
+		stop_limit = 1.0
+
+		# step 5 - stop if close to 1m
+		if shortest <= stop_limit:
+			t.twist.linear.x = 0.0
+			self.b_is_stopped = True
+		else:
+		# step 4 - scale speed by distance to object using tanh
+			t.twist.linear.x = max_speed * np.tanh(shortest - stop_limit)
+			self.b_is_stopped = False
 
 		# Send the command to the robot.
 		self.pub.publish(t)
