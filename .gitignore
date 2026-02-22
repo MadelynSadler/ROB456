@@ -82,8 +82,9 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
+# Jupyter Notebook and grading
 .ipynb_checkpoints
+**/.OTTER_LOG
 
 # IPython
 profile_default/
