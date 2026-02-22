@@ -140,3 +140,6 @@ dmypy.json
 # ROS build artifacts
 ros_ws/install/
 ros_ws/log/
+
+# frames
+ros_ws/frames*
