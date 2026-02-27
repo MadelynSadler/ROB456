@@ -67,7 +67,7 @@ class Lab3Driver(Node):
 
         # Publisher before subscriber
         self.cmd_pub = self.create_publisher(TwistStamped, 'cmd_vel', 1)
-        # Publish the current target as a marker (so RViz can show it)
+        # Publish the current target as a marker (so RViz can ashow it)
         self.target_pub = self.create_publisher(Marker, 'current_target', 1)
 
         # Subscriber after publisher; this is the laser scan
