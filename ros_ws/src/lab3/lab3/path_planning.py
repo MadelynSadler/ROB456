@@ -189,11 +189,37 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
 
         # GUIDE
         #  Step 1: Break out of the loop if current_node_ij is the goal node
+        if goal_loc == current_node_ij:
+            break
         #  Step 2: If this node is closed, skip it
+        if visited_triplet[2] == True:
+            continue
         #  Step 3: Set the node to closed
         #    Now do the instructions from the slide (the actual algorithm)
         #  See also lecture slides
-        # YOUR CODE HERE
+        visited[current_node_ij] = (visited_distance, visited_parent, True)
+        for neighbor_ij in eight_connected(current_node_ij):
+            if (0 <= neighbor_ij[0] < im.shape[1] and # won't go out of bounds
+                0 <= neighbor_ij[1] < im.shape[0] and
+                is_free(im, neighbor_ij)): # if the pixel is not a wall and free and unseen
+
+                # get movement cost
+                dx = abs(current_node_ij[0] - neighbor_ij[0])
+                dy = abs(current_node_ij[1] - neighbor_ij[1])
+                if dx + dy == 2: # diagonal
+                    step_cost = np.sqrt(2)
+                else:
+                    step_cost = 1.0
+                
+                new_dist = distance_to_current_node + step_cost
+                
+                # check if better path has been found
+                # either never been seen, or new path is shorter
+                if neighbor_ij not in visited or new_dist < visited[neighbor_ij][0]:
+                    visited[neighbor_ij] = (new_dist, current_node_ij, False) # add to visited
+                    heapq.heappush(priority_queue, (new_dist, neighbor_ij)) # push to heap
+                    
+            
 
     # Now check that we actually found the goal node
     if not goal_loc in visited:
@@ -204,11 +230,25 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
         #.  and return the path to it - you'll want this for the ROS 2 assignment
         # YOUR CODE HERE
 
-    path = []
-    path.append(goal_loc)
+        # iterate thorugh all visited nodes and pick the smallest
+        all_visited = np.array(list(visited.keys()))
+        diffs = all_visited - np.array(goal_loc) # subtract the goal (i, j) from every visited (i, j) - left with x, y distances from goal for each visited node
+        dist_to_goal = np.linalg.norm(diffs, axis=1) # calculate the length of each row vector
+        closest_idx = np.argmin(dist_to_goal) # find the idx where the smallest distance to the goal was found
+        goal_loc = tuple(all_visited[closest_idx]) # get the original (i, j) of the closets node
+
     # GUIDE: Build the path by starting at the goal node and working backwards
     # YOUR CODE HERE
 
+    current_node = goal_loc
+    path = [current_node]
+    
+    while visited[current_node][1] is not None:
+        parent = visited[current_node][1]
+        path.append(parent)
+        current_node = parent
+    
+    path.reverse()
     return path
 
 
