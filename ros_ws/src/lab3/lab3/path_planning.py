@@ -223,7 +223,7 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
 
     # Now check that we actually found the goal node
     if not goal_loc in visited:
-        print(f"Goal {goal_loc} not reached, taking closest")
+        # print(f"Goal {goal_loc} not reached, taking closest")
 
         # GUIDE: Deal with not being able to get to the goal loc
         #   If the goal location is not reachable, find the node closest to the goal 
