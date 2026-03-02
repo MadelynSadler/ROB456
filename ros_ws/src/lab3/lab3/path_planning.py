@@ -155,13 +155,23 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
     if not is_free(im, goal_loc):
         raise ValueError(f"ERROR: Goal location {goal_loc} is not in the free space of the map")
  
+
+    """
+    A* Heuristic function - straight line
+    """
+    def heuristic(a, b):
+        return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
     # The priority queue itself is just a list, with elements of the form (weight, (i,j))
     #    - i.e., a tuple with the first element the weight/score, the second element a tuple with the pixel location
     priority_queue = []
     # Push the start node onto the queue
     #   push takes the queue itself, then a tuple with the first element the priority value and the second
     #   being whatever data you want to keep - in this case, the robot location, which is a tuple
-    heapq.heappush(priority_queue, (0, robot_loc))
+    
+    # A* prior is f = g + h
+    # initial val is heuristic instead of 0
+    start_h = heuristic(robot_loc, goal_loc)
+    heapq.heappush(priority_queue, (start_h, robot_loc))
 
     # The power of dictionaries - we're going to use a dictionary to store every node we've visited, along
     #   with the node we came from and the current distance
@@ -176,16 +186,20 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
     # Use a break statement to end the while loop if you encounter the goal node before the queue empties
     while priority_queue:
         # Get the current best node off of the list (pop the node off the queue)
-        current_node = heapq.heappop(priority_queue)
+        # current_node = heapq.heappop(priority_queue)
         # Pop returns the value and the i, j
-        distance_to_current_node = current_node[0]
-        current_node_ij = current_node[1]  # i,j index of current node
+        # distance_to_current_node = current_node[0]
+        # current_node_ij = current_node[1]  # i,j index of current node
+
+        current_f, current_node_ij = heapq.heappop(priority_queue) # A*
 
         # Showing how to get this data back out of visited
         visited_triplet = visited[current_node_ij]  # This is a tuple with three values
-        visited_distance = visited_triplet[0]       # First value is the current distance stored for that node
-        visited_parent = visited_triplet[1]         # Second value is the parent node of this one
-        visited_closed_yn = visited_triplet[2]      # Third value is if this node is closed y/n
+        # visited_distance = visited_triplet[0]       # First value is the current distance stored for that node
+        # visited_parent = visited_triplet[1]         # Second value is the parent node of this one
+        # visited_closed_yn = visited_triplet[2]      # Third value is if this node is closed y/n
+
+        g_to_current = visited_triplet[0] #A* dist traveled so far
 
         # GUIDE
         #  Step 1: Break out of the loop if current_node_ij is the goal node
@@ -197,7 +211,9 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
         #  Step 3: Set the node to closed
         #    Now do the instructions from the slide (the actual algorithm)
         #  See also lecture slides
-        visited[current_node_ij] = (visited_distance, visited_parent, True)
+        # visited[current_node_ij] = (visited_distance, visited_parent, True)
+        visited[current_node_ij] = (g_to_current, visited_triplet[1], True) # A*
+        
         for neighbor_ij in eight_connected(current_node_ij):
             if (0 <= neighbor_ij[0] < im.shape[1] and # won't go out of bounds
                 0 <= neighbor_ij[1] < im.shape[0] and
@@ -211,13 +227,21 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
                 else:
                     step_cost = 1.0
                 
-                new_dist = distance_to_current_node + step_cost
+                # new_dist = distance_to_current_node + step_cost
+                new_g = g_to_current + step_cost # A*
                 
                 # check if better path has been found
                 # either never been seen, or new path is shorter
-                if neighbor_ij not in visited or new_dist < visited[neighbor_ij][0]:
-                    visited[neighbor_ij] = (new_dist, current_node_ij, False) # add to visited
-                    heapq.heappush(priority_queue, (new_dist, neighbor_ij)) # push to heap
+                # if neighbor_ij not in visited or new_dist < visited[neighbor_ij][0]:
+                #     visited[neighbor_ij] = (new_dist, current_node_ij, False) # add to visited
+                #     heapq.heappush(priority_queue, (new_dist, neighbor_ij)) # push to heap
+
+                # change new_dist to new_g A*
+                if neighbor_ij not in visited or new_g < visited[neighbor_ij][0]:
+                    priority_f = new_g + heuristic(neighbor_ij, goal_loc)
+
+                    visited[neighbor_ij] = (new_g, current_node_ij, False)
+                    heapq.heappush(priority_queue, (priority_f, neighbor_ij))
                     
             
 
